@@ -43,7 +43,7 @@ const Home = () => {
                     src="/code-sync.png"
                     alt="code-sync-logo"
                 /> */}
-                <h3 className='uniquename'>CODE COLLABRATION</h3>
+                <h3 style={{ fontFamily: 'Exodar' }} className='uniquename'>CODE COLLABRATION</h3>
                 {/* <h4 className="mainLabel">Paste invitation ROOM ID</h4> */}
                 <div className="inputGroup">
                     <input

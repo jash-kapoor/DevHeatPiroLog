@@ -1,14 +1,14 @@
 @font-face {
     font-family: 'Exodar';
-    src: url('/exodar/Exodar-Outline.ttf') format('truetype');
+    src: url('exodar/Exodar-Outline.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
   }
   
-  @font-face {
-    font-family: 'Big_inline';
+  /* @font-face {
+    font-family: 'Big Shoulders';
     src: url('/Big/Big.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
-  }
+  } */
   
