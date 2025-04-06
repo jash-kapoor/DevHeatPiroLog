@@ -52,7 +52,7 @@ const Editor = ({ socketRef, roomId, onCodeChange }) => {
         return () => {
             socket?.off(ACTIONS.CODE_CHANGE);
         };
-    }, [socketRef]);
+    }, [socketRef.current]);
 
     return <textarea id="realtimeEditor"></textarea>;
 };
