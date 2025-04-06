@@ -7,7 +7,6 @@
     /* font-family: 'Chewy', cursive; */
     letter-spacing: 1px;
 } 
-
 .homePageWrapper {
     display: flex;
     align-items: center;
@@ -20,20 +19,18 @@
     background-repeat: no-repeat;
   }
   
-  @font-face {
+  /* @font-face {
     font-family: "Exodar";
-    src: url("/Users/JashKapoor/Desktop/PIRO/realtime-code-editor/public/exodar/Exodar-Outline.ttf")
-      format("truetype");
+    src: url('/exodar/Exodar-Outline.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
   }
   @font-face {
     font-family: "Big_inline";
-    src: url("/Users/JashKapoor/Desktop/PIRO/realtime-code-editor/public/Big/Big.ttf")
-      format("truetype");
+    src: url('/Big/Big.ttf') format('truetype');
     font-weight: normal;
     font-style: normal;
-  }
+  } */
   .homePageWrapper .hlyo{
       position: absolute;
       top: 4%;
