@@ -49,7 +49,7 @@
       top: 4%;
       letter-spacing: 0.6px;
       font-family: "Big Shoulders", Arial, sans-serif;
-      font-size: 60px;
+      font-size: 3.75rem;
       font-weight: bold;
       text-transform: uppercase;
       color: #fff;
@@ -240,7 +240,7 @@
   justify-content: center;
   color: rgb(255, 255, 255);
   text-align: center;
-  padding: 40px 20px;
+  /* padding: 40px 20px; */
 }
 
 /* Move the heading higher */
