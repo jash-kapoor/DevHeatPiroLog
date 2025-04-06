@@ -7,7 +7,7 @@ import 'codemirror/addon/edit/closetag';
 import 'codemirror/addon/edit/closebrackets';
 import ACTIONS from '../Actions';
 
-const Editor = ({ socketRef, roomId, onCodeChange }) => {
+const Editor = ({ socketRef, roomId }) => {
   const editorRef = useRef(null);
   const ignoreChangesRef = useRef(false);
 
@@ -24,16 +24,14 @@ const Editor = ({ socketRef, roomId, onCodeChange }) => {
     );
 
     editor.on('change', (instance, changes) => {
-      const code = instance.getValue();
-      onCodeChange(code);
+      if (ignoreChangesRef.current) return;
       
-      // Only emit if the change came from user input
-      if (!ignoreChangesRef.current && changes.origin !== 'setValue') {
-        socketRef.current?.emit(ACTIONS.CODE_CHANGE, {
-          roomId,
-          code,
-        });
-      }
+      const code = instance.getValue();
+      console.log('Emitting change:', code.slice(0, 50)); // Debug log
+      socketRef.current.emit(ACTIONS.CODE_CHANGE, {
+        roomId,
+        code,
+      });
     });
 
     editorRef.current = editor;
@@ -47,17 +45,18 @@ const Editor = ({ socketRef, roomId, onCodeChange }) => {
     if (!socketRef.current) return;
 
     const handleCodeChange = ({ code }) => {
-      if (code !== null && editorRef.current) {
-        ignoreChangesRef.current = true;
-        editorRef.current.setValue(code);
-        ignoreChangesRef.current = false;
-      }
+      if (!editorRef.current) return;
+      console.log('Received change:', code.slice(0, 50)); // Debug log
+      
+      ignoreChangesRef.current = true;
+      editorRef.current.setValue(code);
+      ignoreChangesRef.current = false;
     };
 
     socketRef.current.on(ACTIONS.CODE_CHANGE, handleCodeChange);
 
     return () => {
-      socketRef.current?.off(ACTIONS.CODE_CHANGE, handleCodeChange);
+      socketRef.current.off(ACTIONS.CODE_CHANGE, handleCodeChange);
     };
   }, [socketRef.current, roomId]);
 

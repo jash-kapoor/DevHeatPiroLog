@@ -8,22 +8,19 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*', // you can restrict this to your frontend domain in prod
+    origin: '*',
     methods: ['GET', 'POST'],
   },
 });
 
 const userSocketMap = {};
+const roomCodeMap = {}; // Stores current code for each room
 
-// Serve static files from React's build folder
 app.use(express.static(path.join(__dirname, 'build')));
-
-// For all other routes, serve index.html
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
-// Helper to get all clients in a room
 function getAllConnectedClients(roomId) {
   return Array.from(io.sockets.adapter.rooms.get(roomId) || []).map((socketId) => ({
     socketId,
@@ -31,7 +28,6 @@ function getAllConnectedClients(roomId) {
   }));
 }
 
-// Socket.io events
 io.on('connection', (socket) => {
   console.log('Socket connected:', socket.id);
 
@@ -39,28 +35,30 @@ io.on('connection', (socket) => {
     userSocketMap[socket.id] = username;
     socket.join(roomId);
 
+    // Send current code to new user
+    if (roomCodeMap[roomId]) {
+      socket.emit(ACTIONS.CODE_CHANGE, { code: roomCodeMap[roomId] });
+    }
+
     const clients = getAllConnectedClients(roomId);
-    clients.forEach(({ socketId }) => {
-      io.to(socketId).emit(ACTIONS.JOINED, {
-        clients,
-        username,
-        socketId: socket.id,
-      });
+    io.to(roomId).emit(ACTIONS.JOINED, {
+      clients,
+      username,
+      socketId: socket.id,
     });
   });
 
   socket.on(ACTIONS.CODE_CHANGE, ({ roomId, code }) => {
-    socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { code });
-  });
-
-  socket.on(ACTIONS.SYNC_CODE, ({ socketId, code }) => {
-    io.to(socketId).emit(ACTIONS.CODE_CHANGE, { code });
+    roomCodeMap[roomId] = code;
+    // Broadcast to ALL clients including sender
+    io.to(roomId).emit(ACTIONS.CODE_CHANGE, { code });
+    console.log(`Code updated in ${roomId}`, code.slice(0, 50)); // Debug log
   });
 
   socket.on('disconnecting', () => {
     const rooms = [...socket.rooms];
     rooms.forEach((roomId) => {
-      socket.in(roomId).emit(ACTIONS.DISCONNECTED, {
+      socket.to(roomId).emit(ACTIONS.DISCONNECTED, {
         socketId: socket.id,
         username: userSocketMap[socket.id],
       });
@@ -69,6 +67,5 @@ io.on('connection', (socket) => {
   });
 });
 
-// Use Railway’s recommended port (default to 8080)
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
