@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import ACTIONS from '../Actions';
 import Client from '../components/Client';
@@ -8,42 +8,43 @@ import { useLocation, useNavigate, Navigate, useParams } from 'react-router-dom'
 
 const EditorPage = () => {
     const socketRef = useRef(null);
-    const codeRef = useRef(null);
+    const codeRef = useRef('');
     const location = useLocation();
     const { roomId } = useParams();
     const reactNavigator = useNavigate();
     const [clients, setClients] = useState([]);
 
-    // Memoized error handler
+    // Memoized handlers
     const handleErrors = useCallback((e) => {
         console.error('Socket error:', e);
         toast.error('Socket connection failed, try again later.');
         reactNavigator('/');
     }, [reactNavigator]);
 
-    // Memoized code change handler
     const handleCodeChange = useCallback((code) => {
         codeRef.current = code;
     }, []);
 
-    // Socket connection and event setup
+    // Stable socket reference
+    const stableSocketRef = useMemo(() => ({
+        current: socketRef.current
+    }), [socketRef.current]);
+
+    // Socket initialization and event handling
     useEffect(() => {
         const initializeSocket = async () => {
             try {
                 socketRef.current = await initSocket();
                 const socket = socketRef.current;
 
-                // Error handlers
                 socket.on('connect_error', handleErrors);
                 socket.on('connect_failed', handleErrors);
 
-                // Join room
                 socket.emit(ACTIONS.JOIN, {
                     roomId,
                     username: location.state?.username,
                 });
 
-                // Event handlers
                 const onJoined = ({ clients, username, socketId }) => {
                     if (username !== location.state?.username) {
                         toast.success(`${username} joined the room.`);
@@ -63,7 +64,6 @@ const EditorPage = () => {
                 socket.on(ACTIONS.JOINED, onJoined);
                 socket.on(ACTIONS.DISCONNECTED, onDisconnected);
 
-                // Cleanup function
                 return () => {
                     socket.off('connect_error', handleErrors);
                     socket.off('connect_failed', handleErrors);
@@ -85,7 +85,7 @@ const EditorPage = () => {
         };
     }, [roomId, location.state?.username, handleErrors]);
 
-    async function copyRoomId() {
+    const copyRoomId = useCallback(async () => {
         try {
             await navigator.clipboard.writeText(roomId);
             toast.success('Room ID copied to clipboard');
@@ -93,11 +93,11 @@ const EditorPage = () => {
             toast.error('Failed to copy Room ID');
             console.error(err);
         }
-    }
+    }, [roomId]);
 
-    function leaveRoom() {
+    const leaveRoom = useCallback(() => {
         reactNavigator('/');
-    }
+    }, [reactNavigator]);
 
     if (!location.state) {
         return <Navigate to="/" />;
@@ -114,7 +114,6 @@ const EditorPage = () => {
                 justifyContent: 'space-between',
                 color: 'white'
             }}>
-                {/* Left sidebar content remains unchanged */}
                 <div className="asideInner">
                     <div className="logo" style={{ textAlign: 'center' }}>
                         <img
@@ -238,7 +237,7 @@ const EditorPage = () => {
 
             <div className="editorWrap">
                 <Editor
-                    socketRef={socketRef}
+                    socketRef={stableSocketRef}
                     roomId={roomId}
                     onCodeChange={handleCodeChange}
                 />
