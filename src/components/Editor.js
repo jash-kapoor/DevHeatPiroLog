@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import Codemirror from 'codemirror';
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/dracula.css';
@@ -9,24 +9,10 @@ import ACTIONS from '../Actions';
 
 const Editor = ({ socketRef, roomId, onCodeChange }) => {
   const editorRef = useRef(null);
-  const ignoreChangesRef = useRef(false);
-  const latestCodeRef = useRef('');
+  const isRemoteChange = useRef(false);
+  const lastCode = useRef('');
 
-  // Memoized change handler
-  const handleEditorChange = useCallback((instance, changes) => {
-    const code = instance.getValue();
-    latestCodeRef.current = code;
-    onCodeChange(code);
-    
-    if (!ignoreChangesRef.current && changes.origin !== 'setValue') {
-      socketRef.current?.emit(ACTIONS.CODE_CHANGE, {
-        roomId,
-        code,
-      });
-    }
-  }, [onCodeChange, roomId, socketRef]);
-
-  // Initialize editor
+  // Initialize CodeMirror editor
   useEffect(() => {
     const editor = Codemirror.fromTextArea(
       document.getElementById('realtimeEditor'),
@@ -45,43 +31,57 @@ const Editor = ({ socketRef, roomId, onCodeChange }) => {
       }
     );
 
-    editor.on('change', handleEditorChange);
+    // Handle local changes
+    editor.on('change', (instance, changes) => {
+      const code = instance.getValue();
+      lastCode.current = code;
+      onCodeChange(code);
+      
+      // Only emit if change is from user input
+      if (!isRemoteChange.current && changes.origin !== 'setValue') {
+        socketRef.current?.emit(ACTIONS.CODE_CHANGE, {
+          roomId,
+          code,
+        });
+      }
+      isRemoteChange.current = false;
+    });
+
     editorRef.current = editor;
 
     return () => {
-      editor.off('change', handleEditorChange);
       editor.toTextArea();
     };
-  }, [handleEditorChange]);
+  }, [onCodeChange, roomId]);
 
-  // Handle incoming changes
+  // Handle incoming changes from other clients
   useEffect(() => {
     const socket = socketRef.current;
     if (!socket) return;
 
-    const handleIncomingChange = ({ code }) => {
-      if (!editorRef.current || code === null || code === latestCodeRef.current) {
-        return;
-      }
-
+    const handleCodeChange = ({ code }) => {
+      if (!editorRef.current || !code || code === lastCode.current) return;
+      
+      // Save cursor and scroll position
       const cursor = editorRef.current.getCursor();
       const scrollInfo = editorRef.current.getScrollInfo();
-
-      ignoreChangesRef.current = true;
+      
+      // Update editor content
+      isRemoteChange.current = true;
       editorRef.current.setValue(code);
-      latestCodeRef.current = code;
-      ignoreChangesRef.current = false;
-
+      lastCode.current = code;
+      
+      // Restore cursor and scroll position
       editorRef.current.setCursor(cursor);
       editorRef.current.scrollTo(scrollInfo.left, scrollInfo.top);
     };
 
-    socket.on(ACTIONS.CODE_CHANGE, handleIncomingChange);
+    socket.on(ACTIONS.CODE_CHANGE, handleCodeChange);
 
     return () => {
-      socket.off(ACTIONS.CODE_CHANGE, handleIncomingChange);
+      socket.off(ACTIONS.CODE_CHANGE, handleCodeChange);
     };
-  }, [socketRef, roomId]); // Proper dependency array
+  }, [socketRef.current, roomId]);
 
   return <textarea id="realtimeEditor"></textarea>;
 };
