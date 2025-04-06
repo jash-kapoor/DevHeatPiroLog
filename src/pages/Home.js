@@ -8,8 +8,9 @@ const Home = () => {
 
     const [roomId, setRoomId] = useState('');
     const [username, setUsername] = useState('');
+
     const createNewRoom = (e) => {
-        e.preventDefault();
+        e.preventDefault(); // prevent default to avoid page reload if used inside <form>
         const id = uuidV4();
         setRoomId(id);
         toast.success('Created a new room');
@@ -21,7 +22,6 @@ const Home = () => {
             return;
         }
 
-        // Redirect
         navigate(`/editor/${roomId}`, {
             state: {
                 username,
@@ -34,17 +34,12 @@ const Home = () => {
             joinRoom();
         }
     };
+
     return (
         <div className="homePageWrapper">
             <h2 className='hlyo'>From Solo to Synergy – Code With Your Team Instantly!</h2>
             <div className="formWrapper">
-                {/* <img
-                    className="homePageLogo"
-                    src="/code-sync.png"
-                    alt="code-sync-logo"
-                /> */}
                 <h3 style={{ fontFamily: 'Exodar' }} className='uniquename'>CODE COLLABRATION</h3>
-                {/* <h4 className="mainLabel">Paste invitation ROOM ID</h4> */}
                 <div className="inputGroup">
                     <input
                         type="text"
@@ -66,21 +61,28 @@ const Home = () => {
                         Join
                     </button>
                     <span className="createInfo">
-                       Let's Increacse The Synergy&nbsp;
-                        <a
+                        Let's Increase The Synergy&nbsp;
+                        <button
                             onClick={createNewRoom}
-                            href=""
                             className="createNewBtn"
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#4dabf7',
+                                cursor: 'pointer',
+                                textDecoration: 'underline',
+                                fontSize: 'inherit',
+                                padding: 0
+                            }}
                         >
                             Room Id
-                        </a>
+                        </button>
                     </span>
                 </div>
             </div>
             <footer>
                 <h4>
-                    
-                    <a href="https://github.com/Tanmay1822">- PIROLOG</a>
+                    <a href="https://github.com/Tanmay1822" target="_blank" rel="noopener noreferrer">- PIROLOG</a>
                 </h4>
             </footer>
         </div>
